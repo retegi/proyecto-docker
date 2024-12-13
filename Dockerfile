@@ -1,20 +1,21 @@
-# Dockerfile
+# Usa una imagen base ligera de Python
 FROM python:3.11-slim
 
-# Establecer el directorio de trabajo dentro del contenedor
-WORKDIR /proyecto-docker
+# Establecer el directorio de trabajo en el contenedor
+WORKDIR /var/www/proyecto-docker/myproject
+ENV PYTHONPATH=/var/www/proyecto-docker/myproject
 
-# Copiar los archivos de requerimientos
-COPY requirements.txt /proyecto-docker/
+# Copiar el archivo requirements.txt desde el contexto de construcción
+COPY myproject/requirements.txt .
 
-# Instalar dependencias
+# Instalar las dependencias desde requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar el código del proyecto al contenedor
-COPY . /proyecto-docker/
+# Copiar todo el proyecto desde el contexto de construcción
+COPY myproject/ .
 
-# Exponer el puerto de desarrollo
+# Exponer el puerto en el que se ejecutará la aplicación
 EXPOSE 8000
 
-# Comando por defecto para iniciar Django
-CMD ["python", "myproject/manage.py", "runserver", "0.0.0.0:8000"]
+# Comando para iniciar Gunicorn
+CMD ["gunicorn", "--bind", "unix:/run/proyecto-docker.sock", "myproject.wsgi:application"]

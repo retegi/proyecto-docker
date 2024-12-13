@@ -1,0 +1,31 @@
+# Usa una imagen base ligera de Python
+FROM python:3.11-slim
+
+# Configuración de entorno
+ENV PYTHONPATH=/var/www/proyecto-docker/myproject
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV DJANGO_SETTINGS_MODULE=myproject.settings
+# Establecer el directorio de trabajo dentro del contenedor
+WORKDIR /var/www/proyecto-docker/myproject
+
+# Instalar dependencias del sistema necesarias (por ejemplo, compiladores o librerías)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libpq-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar los archivos de requerimientos y preparar las dependencias de Python
+COPY . /var/www/proyecto-docker/myproject/
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copiar el código del proyecto al contenedor
+COPY . .
+
+# Exponer el puerto en el que correrá la aplicación
+EXPOSE 8000
+
+# Comando para ejecutar Gunicorn como servidor WSGI
+#CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--chdir", "/var/www/proyecto-docker/myproject", "myproject.wsgi:application"]
+CMD ["gunicorn", "--bind", "unix:/run/proyecto-docker.sock", "myproject.wsgi:application"]
